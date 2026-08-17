@@ -1,0 +1,722 @@
+{
+    "name": "Sheet-Logger",
+    "nodes": [
+        {
+            "parameters": {
+                "formTitle": "CloudScale Solutions - Free Trial Request",
+                "formDescription": "Please fill out this form to start your 14-day free trial. Our team will automatically set up your\ndashboard environment.",
+                "formFields": {
+                    "values": [
+                        {
+                            "fieldLabel": "=Full Name",
+                            "fieldName": "fullName",
+                            "placeholder": "John Doe",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "Email",
+                            "fieldType": "email",
+                            "fieldName": "email",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "Phone",
+                            "fieldName": "phone",
+                            "placeholder": "+1-555-1234"
+                        },
+                        {
+                            "fieldLabel": "Company Name",
+                            "fieldName": "companyName",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "Company Size",
+                            "fieldName": "companySize",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "Industry",
+                            "fieldName": "industry",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "Primary Use Case",
+                            "fieldType": "textarea",
+                            "fieldName": "useCase",
+                            "placeholder": "Briefly describe what workflows you want to automate first",
+                            "requiredField": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.formTrigger",
+            "typeVersion": 2.6,
+            "position": [0, 0],
+            "id": "598a8318-6719-4744-bb4a-a165c2c40c6a",
+            "name": "On form submission",
+            "webhookId": "dd49ff34-66d6-4e26-8959-6248d61d6420"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "7db264d0-2f53-4494-95e4-dd488485392b",
+                            "name": "fullName",
+                            "value": "={{ $json.fullName.trim() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "03d7231c-36de-495d-a733-1ed0c304a894",
+                            "name": "email",
+                            "value": "={{ $json.email.trim().toLowerCase() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "3aaaeaff-fa2c-438f-ad95-db9b804b9574",
+                            "name": "phone",
+                            "value": "={{ $json.phone.trim() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "03794833-aba4-4b20-820d-9adc46a66524",
+                            "name": "useCase",
+                            "value": "={{ $json.useCase.length > 2000 ? $json.useCase.substring(0, 2000) + \"...\" : $json.useCase }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "61765f2f-caea-4642-8679-42341b97ef4e",
+                            "name": "source",
+                            "value": "website_contact_form",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "include": "except",
+                "excludeFields": "formMode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [224, 0],
+            "id": "00e9d7ad-b919-4bef-af0a-4be6eeeed57a",
+            "name": "Edit Fields"
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+                    "mode": "id"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": "gid=0",
+                    "mode": "list",
+                    "cachedResultName": "Sheet1",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=0"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Full Name": "={{ $json.fullName }}",
+                        "Email": "={{ $json.email }}",
+                        "Phone": "={{ $json.phone }}",
+                        "Company Name": "={{ $json.companyName }}",
+                        "CompanySize": "={{ $json.companySize }}",
+                        "UseCase": "={{ $json.useCase }}",
+                        "Industry": "={{ $json.industry }}",
+                        "SubmittedAt": "={{ $json.submittedAt }}",
+                        "Source": "={{ $json.source }}",
+                        "Status": "={{ $json.status }}",
+                        "Lead Score": "={{ $json.leadScore }}",
+                        "Confirmation Sent": "={{ $json.confirmationSent }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "Full Name",
+                            "displayName": "Full Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Email",
+                            "displayName": "Email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Phone",
+                            "displayName": "Phone",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Company Name",
+                            "displayName": "Company Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "CompanySize",
+                            "displayName": "CompanySize",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Industry",
+                            "displayName": "Industry",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "UseCase",
+                            "displayName": "UseCase",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "SubmittedAt",
+                            "displayName": "SubmittedAt",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Source",
+                            "displayName": "Source",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Status",
+                            "displayName": "Status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Confirmation Sent",
+                            "displayName": "Confirmation Sent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Lead Score",
+                            "displayName": "Lead Score",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [928, -144],
+            "id": "bd5bae23-07ce-41d2-817d-356968797ea6",
+            "name": "Append row in sheet",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "jKKYJencfO1ncDKS",
+                    "name": "Google Sheets account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+                    "mode": "id"
+                },
+                "text": "=Invalid lead submission caught: {{$json.fullName}} / {{$json.email}}",
+                "otherOptions": {}
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.5,
+            "position": [944, 112],
+            "id": "29f1776a-e250-41a6-b928-c355d4e635b6",
+            "name": "Malformed Submission",
+            "webhookId": "eb0f89cf-e322-48a6-8712-9af0ece5975b",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $('Attach extra details').item.json.email }}",
+                "subject": "=Thanks for reaching out, {{$('Attach extra details').item.json.fullName}}",
+                "message": "=Hello {{$('Attach extra details').item.json.fullName}}, we received your enquiries and will be in touch soon.\nBest Regards, Sam.",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.2,
+            "position": [1152, -144],
+            "id": "7180b4e7-a674-445f-ad6a-78a703e405a0",
+            "name": "Auto-reply to Lead",
+            "webhookId": "a0130bc5-8d2e-48ba-8869-8c2c7243e3ab",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "mgCicL9i0yfgWtjI",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "7f502242-f580-41e0-80f6-4e27945d5994",
+                            "name": "status",
+                            "value": "Invalid - needs manual review",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [704, 112],
+            "id": "e8b8326e-611b-487c-a584-4c6420f74010",
+            "name": "Attach Invalid Status"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "YOUR_SLACK_CHANNEL_ID_HERE",
+                    "mode": "id"
+                },
+                "text": "=New Lead!\nName: {{ $('Append row in sheet').item.json['Full Name']}}\nCompany: {{$('Append row in sheet').item.json['Company Name']}}",
+                "otherOptions": {}
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.5,
+            "position": [1664, -144],
+            "id": "00d9bb15-947f-4e5e-a6af-673149179de7",
+            "name": "Send a message",
+            "webhookId": "9523fdc8-a4d3-487a-9c82-c1004f4f79b2",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "13526ac6-47c3-4b95-bb16-0ffdbcbf4aa8",
+                            "name": "status",
+                            "value": "New",
+                            "type": "string"
+                        },
+                        {
+                            "id": "3f897fd9-ea09-4e8e-aad8-96ca90d5228b",
+                            "name": "confirmationSent",
+                            "value": false,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "692e6a67-554c-46ee-ae9c-ec4c2b0e7777",
+                            "name": "leadScore",
+                            "value": "0",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [720, -144],
+            "id": "fb510858-dd18-4dd8-acee-6d13af7db73e",
+            "name": "Attach extra details"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "loose",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "3ff093f4-c54f-461a-b0d1-c0e5abf84121",
+                            "leftValue": "={{ $json.email.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/) }}",
+                            "rightValue": "true",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "looseTypeValidation": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [448, 0],
+            "id": "147ece51-f2ae-4609-a5ed-07b6524e50de",
+            "name": "Email valid?"
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "documentId": {
+                    "__rl": true,
+                    "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+                    "mode": "list",
+                    "cachedResultName": "CloudScale Leads",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": "gid=0",
+                    "mode": "list",
+                    "cachedResultName": "Sheet1",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=0"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Confirmation Sent": "=true",
+                        "Email": "={{ $('Append row in sheet').item.json.Email }}"
+                    },
+                    "matchingColumns": ["Email"],
+                    "schema": [
+                        {
+                            "id": "Full Name",
+                            "displayName": "Full Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Email",
+                            "displayName": "Email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Phone",
+                            "displayName": "Phone",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Company Name",
+                            "displayName": "Company Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "CompanySize",
+                            "displayName": "CompanySize",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Industry",
+                            "displayName": "Industry",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "UseCase",
+                            "displayName": "UseCase",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "SubmittedAt",
+                            "displayName": "SubmittedAt",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Source",
+                            "displayName": "Source",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Status",
+                            "displayName": "Status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Confirmation Sent",
+                            "displayName": "Confirmation Sent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Lead Score",
+                            "displayName": "Lead Score",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "row_number",
+                            "displayName": "row_number",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true,
+                            "readOnly": true,
+                            "removed": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [1408, -144],
+            "id": "fec075fe-339e-4656-96c1-20a1ff522684",
+            "name": "Update row in sheet",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "jKKYJencfO1ncDKS",
+                    "name": "Google Sheets account"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "On form submission": {
+            "main": [
+                [
+                    {
+                        "node": "Edit Fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Edit Fields": {
+            "main": [
+                [
+                    {
+                        "node": "Email valid?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Append row in sheet": {
+            "main": [
+                [
+                    {
+                        "node": "Auto-reply to Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Attach Invalid Status": {
+            "main": [
+                [
+                    {
+                        "node": "Malformed Submission",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Auto-reply to Lead": {
+            "main": [
+                [
+                    {
+                        "node": "Update row in sheet",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Attach extra details": {
+            "main": [
+                [
+                    {
+                        "node": "Append row in sheet",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email valid?": {
+            "main": [
+                [
+                    {
+                        "node": "Attach extra details",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Attach Invalid Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update row in sheet": {
+            "main": [
+                [
+                    {
+                        "node": "Send a message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": false,
+        "timeSavedMode": "fixed",
+        "errorWorkflow": "4GpaUL2ysdTxzVVp",
+        "callerPolicy": "workflowsFromSameOwner"
+    },
+    "versionId": "ba797b9e-1a28-435c-9e71-3c6fdb056ea4",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "f0bb67c2e0672c51300bee83778c2adce493ad3b85d51a574536cb91e9b790aa"
+    },
+    "nodeGroups": [],
+    "id": "VyfhunSoGfTnhAms",
+    "tags": []
+}
