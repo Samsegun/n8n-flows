@@ -5,6 +5,11 @@
 This workflow accepts Authenticated post requests from clients/users through a JSON format and creates a
 database record on Airtable. A request must contain a valid action field such as create, read, update or delete. It routes each request based on the action provided, validates the required fields (title, assignee and dueDate) and provides default values for optional fields (status and priority).
 
+### Example URLs format
+
+- `https://[your-n8n-webhook-url]/webhook/tasks`. Entry point for the workflow. You get this from the webhook-trigger Parameters
+- `https://[your-n8n-webhook-url]/webhook/tasks/info`. A description of the service endpoints
+
 ### Authentication Note
 
 This workflow uses `Header Auth` for authentication. You will need a valid x-api-key attached to the Headers (I generated one from here; `https://it-tools.tech/token-generator`). You can reach out to me if you intend testing my personal instance.
@@ -30,6 +35,15 @@ Activated by an HTTP webhook; the workflow runs each time the webhook URL receiv
 
 Contact the person who manages workflow. You can send me a mail also `oyebadesegunsam@gmail.com`
 
+## Valid Fields
+
+- action: can either be one of `create`, `read`, `update` or `delete`
+- title: must be less or equals 200 characters.
+- assignee: must be in valid email format e.g. `johndoe@mail.com`
+- dueDate: required and must be in YYYY-MM-DD format e.g. 2026-12-31
+- status: can either be one of `Todo`, `In progess` or `Done`
+- priority: can either be one of `Low`, `Medium` or `High`
+
 ## Example requests
 
 Send a POST request and include either of the following bodies in the JSON body for desired operation;
@@ -41,12 +55,13 @@ Send a POST request and include either of the following bodies in the JSON body 
   "assignee": "john@example.com",
   "dueDate": "2026-10-10"
 }`
+  Status and priority fields are optional and will default to `Todo` and `Medium` respectively.
 
 - get task(s)
   `{
   "action": "read"
 }`
-  For get requests, providing only the action field returns all tasks from the table. You can filter by providing additional fields like assignee, status or priority. E.g.
+  For get requests, providing only the action field returns all tasks from the table. You can filter response by providing additional fields like assignee, status or priority. E.g.
   `{
     "action": "read"
     // "assignee": "sam@example.com",
@@ -62,7 +77,7 @@ Send a POST request and include either of the following bodies in the JSON body 
     // "status": "in progress",
     // "priority": "medium"
 }`
-  Id is required for update while the remaining fields are optional depending on desired update.
+  id is required for update while the remaining fields are optional depending on desired update.
 
 - delete task (soft delete)
   `{
