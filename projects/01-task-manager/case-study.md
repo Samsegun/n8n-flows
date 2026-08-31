@@ -61,3 +61,7 @@ present in the request so partial updates never wipe unrelated data; Delete is a
 
 `n8n` `Airtable` `Webhook (dual trigger: authenticated + public)` `Header Auth (X-api-key)`
 `Node types used: Webhook, Switch, IF, Code, Airtable (Create/Search/Update), Respond to Webhook`
+
+## Screenshots / Evidence
+
+- ![Task Manager API workflow](./images/task-manager-workflow.png "task manager workflow")
