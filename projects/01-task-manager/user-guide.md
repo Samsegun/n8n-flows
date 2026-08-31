@@ -7,8 +7,8 @@ database record on Airtable. A request must contain a valid action field such as
 
 ### Example URLs format
 
-- `https://[your-n8n-webhook-url]/webhook/tasks`. Entry point for the workflow. You get this from the webhook-trigger Parameters
-- `https://[your-n8n-webhook-url]/webhook/tasks/info`. A description of the service endpoints
+- `https://[your-n8n-webhook-url]/webhook/tasks` (Authenticated). Entry point for the workflow. You get this from the webhook-trigger Parameters
+- `https://[your-n8n-webhook-url]/webhook/tasks/info` (Unauthenticated). A description of the service endpoints
 
 ### Authentication Note
 
