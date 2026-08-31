@@ -7,7 +7,7 @@ database record on Airtable. A request must contain a valid action field such as
 
 ### Authentication Note
 
-This workflow uses `Header Auth` for authentication. You will need a valid x-api-key attached to the Headers. You can reach out to me if you intend testing my personal instance.
+This workflow uses `Header Auth` for authentication. You will need a valid x-api-key attached to the Headers (I generated one from here; `https://it-tools.tech/token-generator`). You can reach out to me if you intend testing my personal instance.
 
 ## What triggers it
 
