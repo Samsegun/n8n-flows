@@ -5,9 +5,10 @@ end-to-end — trigger, transformation, multi-app integration, error handling, a
 
 ## Projects
 
-| #   | Project                   | Core Skill  | Case Study                                             |
-| --- | ------------------------- | ----------- | ------------------------------------------------------ |
-| 1   | Form-to-Sheet Lead Logger | Data intake | [Lead Logger](./projects/00-lead-logger/case-study.md) |
+| #   | Project                   | Core Skill                     | Case Study                                               |
+| --- | ------------------------- | ------------------------------ | -------------------------------------------------------- |
+| 1   | Form-to-Sheet Lead Logger | Data intake                    | [Lead Logger](./projects/00-lead-logger/case-study.md)   |
+| 2   | Task Manager Sync         | Data intake and transformation | [Task Manager](./projects/01-task-manager/case-study.md) |
 
 ## What I focused on
 
