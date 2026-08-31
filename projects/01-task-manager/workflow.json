@@ -1,0 +1,1723 @@
+{
+    "name": "Task Manager Sync",
+    "nodes": [
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"Input Error\",\n  \"data\": {{ JSON.stringify($json.validationErrors) }}\n}\n",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [928, -608],
+            "id": "8a49508f-05e4-4815-b3bd-5089783d39ef",
+            "name": "Validation-Error Response"
+        },
+        {
+            "parameters": {
+                "jsCode": "for (const item of $input.all()) {\n  const body = item.json.body || {}\n  item.json.validationErrors = {}\n\n   // check title (must exist AND be <= 200 characters)\n  if(!body.title || body.title.trim().length === 0 || body.title.length > 200) {\n    item.json.validationErrors.title = \"Title must be provided and less than 200 characters\"\n  }\n\n    // check Assignee Email (must exist AND match valid syntax)\n  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;\n  if (!body.assignee || !emailRegex.test(body.assignee)) {\n    item.json.validationErrors.assignee = \"Assignee email must be provided and valid\";\n  }\n\n  // check Due Date format (YYYY-MM-DD)\n  const dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;\n  if (!body.dueDate) {\n    item.json.validationErrors.dueDate = \"Due date must be provided and be in YYYY-MM-DD format\";\n  } else if (!dateRegex.test(body.dueDate)) {\n    item.json.validationErrors.dueDate = \"Due date must be in YYYY-MM-DD format\";\n  } else {\n   // (catches impossible dates like 2026-02-31)\n    const parsedDate = new Date(body.dueDate);\n    if (isNaN(parsedDate.getTime())) {\n      item.json.validationErrors.dueDate = \"Provided date is a calendar impossibility\";\n    }\n  }\n\n   // mark overall status\n  item.json.isInvalid = Object.keys(item.json.validationErrors).length > 0;\n  \n}\n\nreturn $input.all();"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [352, -496],
+            "id": "00425f8e-3506-48bb-9eb6-b5c05310b6c8",
+            "name": "Validate User input"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "62589fe1-90ab-4dff-b02a-125b7e461835",
+                            "leftValue": "={{ $json.isInvalid }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [576, -496],
+            "id": "8aa931c5-e2cc-4129-a169-07e42b92a673",
+            "name": "User input is invalid?"
+        },
+        {
+            "parameters": {
+                "rules": {
+                    "values": [
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.body.action.toLowerCase().trim() }}",
+                                        "rightValue": "create",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals"
+                                        },
+                                        "id": "7bb6f4f4-4419-419b-b7d0-926903be9a3b"
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "58b2d3a8-fbc4-4318-a02e-0892f2565fac",
+                                        "leftValue": "={{ $json.body.action.toLowerCase().trim() }}",
+                                        "rightValue": "read",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals",
+                                            "name": "filter.operator.equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "0f22bd09-1ba8-4c36-a36d-70e572e0a6e3",
+                                        "leftValue": "={{ $json.body.action.toLowerCase().trim() }}",
+                                        "rightValue": "update",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals",
+                                            "name": "filter.operator.equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "4ad4bc70-c8f7-417f-affc-115c3ab2c1cd",
+                                        "leftValue": "={{ $json.body.action.toLowerCase().trim() }}",
+                                        "rightValue": "delete",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals",
+                                            "name": "filter.operator.equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "ef8fe54f-5c98-43eb-8a11-4c11714737a7",
+                                        "leftValue": "={{ ![\"create\", \"read\", \"update\", \"delete\"].includes($json.body.action.toLowerCase().trim()) }}",
+                                        "rightValue": "",
+                                        "operator": {
+                                            "type": "boolean",
+                                            "operation": "true",
+                                            "singleValue": true
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.4,
+            "position": [240, -32],
+            "id": "683e004e-2bdf-42c6-89ed-2a9b7e871420",
+            "name": "Check Action"
+        },
+        {
+            "parameters": {
+                "operation": "create",
+                "base": {
+                    "__rl": true,
+                    "value": "apph1dXaZ3IGVYcZV",
+                    "mode": "list",
+                    "cachedResultName": "samsegun",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbll6w4qeLBXiGKqE",
+                    "mode": "list",
+                    "cachedResultName": "Task-manager",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV/tbll6w4qeLBXiGKqE"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Title": "={{ $json.title }}",
+                        "Assignee": "={{ $json.assignee }}",
+                        "Due_Date": "={{ $json.dueDate }}",
+                        "Priority": "={{ $json.priority }}",
+                        "Status": "={{ $json.status }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "Task_ID",
+                            "displayName": "Task_ID",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "Title",
+                            "displayName": "Title",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Assignee",
+                            "displayName": "Assignee",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Status",
+                            "displayName": "Status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Todo",
+                                    "value": "Todo"
+                                },
+                                {
+                                    "name": "In Progress",
+                                    "value": "In Progress"
+                                },
+                                {
+                                    "name": "Done",
+                                    "value": "Done"
+                                },
+                                {
+                                    "name": "Archived",
+                                    "value": "Archived"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Due_Date",
+                            "displayName": "Due_Date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "dateTime",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Priority",
+                            "displayName": "Priority",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Low",
+                                    "value": "Low"
+                                },
+                                {
+                                    "name": "Medium",
+                                    "value": "Medium"
+                                },
+                                {
+                                    "name": "High",
+                                    "value": "High"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Last_Updated",
+                            "displayName": "Last_Updated",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [1152, -416],
+            "id": "16f5d364-b822-4954-b90b-82e7db081062",
+            "name": "Create a task",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "c418f803-ba43-4cd1-8859-95e7128bbd0d",
+                            "name": "title",
+                            "value": "={{ $json.body.title.trim() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "fc4a9c2d-1af6-404f-9572-46102f127fb1",
+                            "name": "assignee",
+                            "value": "={{ $json.body.assignee.trim() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "a810f23d-0dcd-4399-a9bf-409010aff200",
+                            "name": "dueDate",
+                            "value": "={{ new Date($json.body.dueDate).toDateTime() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "927e7cf8-9b22-43f8-a3f1-461ff04ec5b2",
+                            "name": "status",
+                            "value": "={{ ($json.body.status && ['in progress', 'todo', 'done', 'archived'].includes($json.body.status.toLowerCase().trim())) ? $json.body.status.toTitleCase().trim() : \"Todo\" }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "ad279bf9-5396-4c03-a3d6-22e47853bdb0",
+                            "name": "priority",
+                            "value": "={{ ($json.body.priority && ['low', 'medium', 'high'].includes($json.body.priority.toLowerCase().trim())) ? $json.body.priority.toTitleCase().trim() : \"Medium\" }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [928, -416],
+            "id": "f172294e-31c1-472f-a4f9-b0b7558ea572",
+            "name": "Normalize input fields"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{\n  \"message\": \"Unknown action. Please enter one of the following as action - create, read, update, delete.\"\n}",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [368, 912],
+            "id": "45460353-6403-415e-bb96-7e1ec22ea0ce",
+            "name": "Unknown Action"
+        },
+        {
+            "parameters": {
+                "base": {
+                    "__rl": true,
+                    "value": "apph1dXaZ3IGVYcZV",
+                    "mode": "list",
+                    "cachedResultName": "samsegun",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbll6w4qeLBXiGKqE",
+                    "mode": "list",
+                    "cachedResultName": "Task-manager",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV/tbll6w4qeLBXiGKqE"
+                },
+                "id": "={{ $json.body.id.trim() }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [848, -240],
+            "id": "bd3d4e94-554e-4ffd-9e91-709482442bf6",
+            "name": "Get a task",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "7386cbff-149e-473c-868e-f5d061d6fffc",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "d21172fd-22e1-4c79-953a-ea0f4cf5723b",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [576, -224],
+            "id": "128e64f2-dbcf-410c-812f-cedada310ced",
+            "name": "Id is present?"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{\n  \"message\": \"Task not found\",\n  \"error\": \"The resource you are requesting could not be found\"\n}",
+                "options": {
+                    "responseCode": "={{ 404 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1408, -64],
+            "id": "e4a7a049-a0c6-47f1-9fd5-61c67071fc8b",
+            "name": "Task not found"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "5cf11960-e672-427f-b3af-640cda26eb49",
+                            "leftValue": "={{ !$json.error }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [1120, -224],
+            "id": "79ec4085-c758-4978-85df-6dfa0f9533ef",
+            "name": "Task Found?"
+        },
+        {
+            "parameters": {
+                "jsCode": "for (const item of $input.all()) {\n  const body = item.json.body;\n  const filters = [];\n\n  \n  // filter by assignee, status, priority\n  if (body.assignee) filters.push(`{Assignee}='${body.assignee.toLowerCase().trim()}'`);\n  \n  if (body.status)   filters.push(`{Status}='${body.status.trim().charAt(0).toUpperCase() + body.status.trim().slice(1).toLowerCase()}'`);\n  \n  if (body.priority) filters.push(`{Priority}='${body.priority.trim().charAt(0).toUpperCase() + body.priority.trim().slice(1).toLowerCase()}'`);\n\n  const formula = filters.length === 0 ? ''\n    : filters.length === 1 ? filters[0]\n    : `AND(${filters.join(',')})`;\n\n  return { json: { ...body, filterByFormula: formula } };\n}\n\nreturn $input.all();"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [864, 96],
+            "id": "c6efa3db-4c80-4f68-bcfd-a5d2cffaa1f8",
+            "name": "Filter tasks"
+        },
+        {
+            "parameters": {
+                "operation": "search",
+                "base": {
+                    "__rl": true,
+                    "value": "apph1dXaZ3IGVYcZV",
+                    "mode": "list",
+                    "cachedResultName": "samsegun",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbll6w4qeLBXiGKqE",
+                    "mode": "list",
+                    "cachedResultName": "Task-manager",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV/tbll6w4qeLBXiGKqE"
+                },
+                "filterByFormula": "={{ $json.filterByFormula }}",
+                "options": {},
+                "sort": {
+                    "property": [
+                        {
+                            "field": "Due_Date"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [1072, 96],
+            "id": "c1dbc5fe-9526-4029-a4a2-706e9022b76f",
+            "name": "Get task(s)",
+            "alwaysOutputData": true,
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{$json}}",
+                "options": {
+                    "responseCode": "={{ 200 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1520, 96],
+            "id": "d69ac483-a06d-48c3-a1cf-8377d6b24e93",
+            "name": "Return task(s)"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"One task found\",\n  \"data\": {\n      \"id\": \"{{ $json.id }}\",\n      \"title\": \"{{ $json.fields.Title }}\",\n      \"assignee\": \"{{ $json.fields.Assignee }}\",\n      \"status\": \"{{ $json.fields.Status }}\",\n      \"dueDate\": \"{{ $json.fields.Due_Date ? $json.fields.Due_Date : \"No date provided\"}}\",\n      \"priority\": \"{{ $json.fields.Priority }}\",\n      \"created\": \"{{ $json.createdTime }}\",\n      \"updated\": \"{{ $json.fields.Last_Updated }}\"\n  }\n} ",
+                "options": {
+                    "responseCode": "={{ 200 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1392, -240],
+            "id": "2f577c2e-5a43-4070-ab2d-e3ab24b0af34",
+            "name": "Return task"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"One or more items created successfully\",\n  \"task\": {\n      \"id\": \"{{ $json.id }}\",\n      \"title\": \"{{ $json.fields.Title }}\",\n      \"assignee\": \"{{ $json.fields.Assignee }}\",\n      \"status\": \"{{ $json.fields.Status }}\",\n      \"dueDate\": \"{{ $json.fields.Due_Date ? $json.fields.Due_Date : \"No date provided\"}}\",\n      \"priority\": \"{{ $json.fields.Priority }}\",\n      \"created\": \"{{ $json.createdTime }}\"\n  }\n} ",
+                "options": {
+                    "responseCode": "={{ 201 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1472, -608],
+            "id": "56bec262-5731-4838-a046-087f7a9d5c10",
+            "name": "Task creation successful"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "701b5159-6220-48e9-a235-53d52bfd7d60",
+                            "leftValue": "={{ $json.isInvalid }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [1104, 288],
+            "id": "7b11f89f-c973-44e0-8a0c-2bfc224b14e0",
+            "name": "Invalid/No fields present?"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "7386cbff-149e-473c-868e-f5d061d6fffc",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "d21172fd-22e1-4c79-953a-ea0f4cf5723b",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [624, 304],
+            "id": "b03355e9-3dd0-4e80-abb2-f8598d8f08c8",
+            "name": "Id is present?2"
+        },
+        {
+            "parameters": {
+                "jsCode": "for (const item of $input.all()) {\n  const body = item.json.body || {};\n  item.json.validationErrors = item.json.validationErrors || {};\n\n  // the fields allowed for updates\n  const allowedUpdates = ['title', 'assignee', 'dueDate', 'status', 'priority'];\n\n  // filter incoming keys to see if any match allowed update fields\n  const providedUpdates = Object.keys(body).filter(key => allowedUpdates.includes(key));\n\n  // validate that at least one update key exists\n  if (providedUpdates.length === 0) {\n    item.json.validationErrors.updateFields = \"You must provide at least one field to update (title, assignee, dueDate, status, or priority).\";\n  }\n\n  // mark overall error status\n  item.json.isInvalid = Object.keys(item.json.validationErrors).length > 0;\n}\n\nreturn $input.all();\n"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [832, 288],
+            "id": "789552ae-4be3-4402-806f-d3784281ee6a",
+            "name": "Validate fields"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "07c4da52-f430-42b4-8e44-819bea984815",
+                            "leftValue": "={{ $json.isInvalid }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [1536, 464],
+            "id": "d6452750-48e4-444a-998d-e85b09247f34",
+            "name": "Is invalid?"
+        },
+        {
+            "parameters": {
+                "jsCode": "const output = [];\n\n\nfor (const item of $input.all()) {\n  const body = item.json.body || {};\n  \n  // Create a separate container for the columns being changed\n  const fieldsToUpdate = {};\n  const validationErrors = {};\n\n  // title - must not be over 200 characters\n  if (body.title !== undefined) {\n    const trimmedTitle = body.title.trim();\n    if (trimmedTitle.length === 0 || trimmedTitle.length > 200) {\n      validationErrors.title = \"Title must not be empty and must be 200 characters or less.\";\n    } else {\n      fieldsToUpdate.Title = trimmedTitle;\n    }\n  }\n\n  // assignee email must be in valid format\n  if (body.assignee !== undefined) {\n    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;\n    const trimmedEmail = body.assignee.trim();\n    if (!emailRegex.test(trimmedEmail)) {\n      validationErrors.assignee = \"Assignee email must be a valid email address.\";\n    } else {\n      fieldsToUpdate.Assignee = trimmedEmail;\n    }\n  }\n\n  // status validation\n  if (body.status !== undefined) {\n    const cleanStatus = body.status.toLowerCase().trim();\n    const validStatuses = ['in progress', 'todo', 'done', 'archived'];\n    if (!validStatuses.includes(cleanStatus)) {\n      validationErrors.status = `Status must be one of: ${validStatuses.join(', ')}.`;\n    } else {\n      // capitalize first letter cleanly\n      fieldsToUpdate.Status = cleanStatus.charAt(0).toUpperCase() + cleanStatus.slice(1);\n    }\n  }\n\n  // priority validation\n  if (body.priority !== undefined) {\n    const cleanPriority = body.priority.toLowerCase().trim();\n    const validPriorities = ['low', 'medium', 'high'];\n    if (!validPriorities.includes(cleanPriority)) {\n      validationErrors.priority = `Priority must be one of: ${validPriorities.join(', ')}.`;\n    } else {\n      // capitalize first letter cleanly\n      fieldsToUpdate.Priority = cleanPriority.charAt(0).toUpperCase() + cleanPriority.slice(1);\n    }\n  }\n\n   // check dueDate format (YYYY-MM-DD)\n   if (body.dueDate !== undefined) {\n    const dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;\n    if (!dateRegex.test(body.dueDate)) {\n      validationErrors.dueDate = \"Due date must be in YYYY-MM-DD format.\";\n    } else {\n      fieldsToUpdate['Due_Date'] = body.dueDate;\n    }\n  }\n\n  // 6. Check if any errors occurred\n  const isInvalid = Object.keys(validationErrors).length > 0;\n\n  // separate output based on validity\n  if(isInvalid) {\n    output.push({\n      json: {\n        id: body.id,\n        isInvalid: isInvalid,\n        validationErrors: isInvalid ? validationErrors : undefined,\n        fields: isInvalid ? undefined : fieldsToUpdate \n      }\n    });\n  } else {\n    output.push({\n      json: {\n        id: body.id,\n        ...fieldsToUpdate\n      }\n    });\n  }\n  \n}\n\nreturn output;\n"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1312, 464],
+            "id": "ab614b57-3fd9-4a14-9050-9a1b4db14db3",
+            "name": "Normalize and Validate"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"No valid fields to update\",\n  \"error\": \"{{ $json.validationErrors.updateFields }}\"\n}",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1440, 272],
+            "id": "8cffc664-3971-4207-ae62-0903106394f1",
+            "name": "No valid fields"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"No valid fields to update\",\n  \"error\": {{ $json.validationErrors.toJsonString() }}\n}",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1856, 416],
+            "id": "fcd7b0d6-45d5-4465-bdff-3c39a86115aa",
+            "name": "No valid fields1"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"field(s) updated\",\n  \"task\": {\n    \"id\": \"{{ $json.fields.Task_ID }}\",\n    \"title\": \"{{ $json.fields.Title }}\",\n    \"assignee\": \"{{ $json.fields.Assignee }}\",\n    \"status\": \"{{ $json.fields.Status }}\",\n    \"dueDate\": \"{{ $json.fields.Due_Date }}\",\n    \"priority\": \"{{ $json.fields.Priority }}\",\n    \"created\": \"{{ $json.createdTime }}\",\n    \"updated\": \"{{ $json.fields.Last_Updated }}\"\n  }\n}",
+                "options": {
+                    "responseCode": "={{ 200 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [2336, 560],
+            "id": "25498ab6-4c6c-4fb4-b914-e1fe87ca3435",
+            "name": "Task updated"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "7386cbff-149e-473c-868e-f5d061d6fffc",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "d21172fd-22e1-4c79-953a-ea0f4cf5723b",
+                            "leftValue": "={{ $json.body.id.trim() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [624, 736],
+            "id": "5057f12f-9e7c-48d6-b6c4-58d0c281df33",
+            "name": "Id is present?3"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"id is required\"\n}",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [896, 480],
+            "id": "3d3ce1f3-0c63-4c67-a063-e6a0c479067f",
+            "name": "No ID response"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"id is required\"\n}",
+                "options": {
+                    "responseCode": "={{ 400 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [896, 976],
+            "id": "c10fda0b-e199-4b1c-9c43-6017272aefc1",
+            "name": "No ID response1"
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "base": {
+                    "__rl": true,
+                    "value": "apph1dXaZ3IGVYcZV",
+                    "mode": "list",
+                    "cachedResultName": "samsegun",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbll6w4qeLBXiGKqE",
+                    "mode": "list",
+                    "cachedResultName": "Task-manager",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV/tbll6w4qeLBXiGKqE"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {},
+                    "matchingColumns": ["id"],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Task_ID",
+                            "displayName": "Task_ID",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Title",
+                            "displayName": "Title",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Assignee",
+                            "displayName": "Assignee",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Status",
+                            "displayName": "Status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Todo",
+                                    "value": "Todo"
+                                },
+                                {
+                                    "name": "In progress",
+                                    "value": "In progress"
+                                },
+                                {
+                                    "name": "Done",
+                                    "value": "Done"
+                                },
+                                {
+                                    "name": "Archived",
+                                    "value": "Archived"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Due_Date",
+                            "displayName": "Due_Date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "dateTime",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Priority",
+                            "displayName": "Priority",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Low",
+                                    "value": "Low"
+                                },
+                                {
+                                    "name": "Medium",
+                                    "value": "Medium"
+                                },
+                                {
+                                    "name": "High",
+                                    "value": "High"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Last_Updated",
+                            "displayName": "Last_Updated",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [2080, 576],
+            "id": "45a38932-8cd4-4194-b242-a82612950493",
+            "name": "Update task",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"Task Archived\",\n  \"task\": {\n    \"id\": \"{{ $json.fields.Task_ID }}\",\n    \"title\": \"{{ $json.fields.Title }}\",\n    \"assignee\": \"{{ $json.fields.Assignee }}\",\n    \"status\": \"{{ $json.fields.Status }}\",\n    \"dueDate\": \"{{ $json.fields.Due_Date }}\",\n    \"priority\": \"{{ $json.fields.Priority }}\",\n    \"created\": \"{{ $json.createdTime }}\",\n    \"updated\": \"{{ $json.fields.Last_Updated }}\"\n  }\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1536, 704],
+            "id": "e92cb068-3b67-49f8-80b1-7e68f418846d",
+            "name": "Task archived"
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "base": {
+                    "__rl": true,
+                    "value": "apph1dXaZ3IGVYcZV",
+                    "mode": "list",
+                    "cachedResultName": "samsegun",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbll6w4qeLBXiGKqE",
+                    "mode": "list",
+                    "cachedResultName": "Task-manager",
+                    "cachedResultUrl": "https://airtable.com/apph1dXaZ3IGVYcZV/tbll6w4qeLBXiGKqE"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {},
+                    "matchingColumns": ["id"],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Task_ID",
+                            "displayName": "Task_ID",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "Title",
+                            "displayName": "Title",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Assignee",
+                            "displayName": "Assignee",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Status",
+                            "displayName": "Status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Todo",
+                                    "value": "Todo"
+                                },
+                                {
+                                    "name": "In progress",
+                                    "value": "In progress"
+                                },
+                                {
+                                    "name": "Done",
+                                    "value": "Done"
+                                },
+                                {
+                                    "name": "Archived",
+                                    "value": "Archived"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Due_Date",
+                            "displayName": "Due_Date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "dateTime",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Priority",
+                            "displayName": "Priority",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "options",
+                            "options": [
+                                {
+                                    "name": "Low",
+                                    "value": "Low"
+                                },
+                                {
+                                    "name": "Medium",
+                                    "value": "Medium"
+                                },
+                                {
+                                    "name": "High",
+                                    "value": "High"
+                                }
+                            ],
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Last_Updated",
+                            "displayName": "Last_Updated",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [1136, 720],
+            "id": "d98a8145-3f2d-42f5-bd2b-0df75351eaf5",
+            "name": "Archive Task",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": {{ $json.message.toJsonString() }},\n  \"error\": {{ $json.error.description.toJsonString() || \"Unknown database error\" }}\n}",
+                "options": {
+                    "responseCode": "={{ $json.error.cause.message.slice(0, 3).toNumber() || 500 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [2352, 768],
+            "id": "85a2c5fa-e27a-4208-bad0-169670acdefe",
+            "name": "Update Error"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": {{ $json.message.toJsonString() }},\n  \"error\": {{ $json.error.description.toJsonString() || \"Unknown database error\" }}\n}",
+                "options": {
+                    "responseCode": "={{ $json.error.cause.message.slice(0, 3).toNumber() || 500 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1536, 912],
+            "id": "8cbf5cac-3202-424f-95b3-11a29a5d6540",
+            "name": "Archive Error"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": {{ $json.message.toJsonString() }},\n  \"error\": {{ $json.error.description.toJsonString() || \"Unknown database error\" }}\n}",
+                "options": {
+                    "responseCode": "={{ $json.error.cause.message.slice(0, 3).toNumber() || 500 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1472, -400],
+            "id": "cc25c171-bd76-4c68-b9d2-bb44601c483f",
+            "name": "Create Error"
+        },
+        {
+            "parameters": {
+                "path": "tasks/info",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [-16, 400],
+            "id": "eac7ae64-5336-44ed-ac86-4409ac51da5c",
+            "name": "API Info",
+            "webhookId": "7c121dd0-f501-479a-aa4a-da9fdf8ba801"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "tasks",
+                "authentication": "headerAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [16, 16],
+            "id": "975b29a8-55d6-4c6e-ac3b-62e82f923393",
+            "name": "Task API",
+            "webhookId": "6b8c9909-8ad8-4465-9ea8-aa6978202c9d",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "4r01IsPR8WQCA5mt",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{\n  \"service\": \"Airtable Task Manager API\",\n  \"actions\": {\n    \"create\": { \"required\": [\"title\", \"assignee\"], \"optional\": [\"dueDate\", \"priority\", \"status\"] },\n    \"read\":   { \"optional\": [\"id\", \"assignee\", \"status\", \"priority\"] },\n    \"update\": { \"required\": [\"id\"], \"optional\": [\"title\", \"assignee\", \"status\", \"priority\", \"dueDate\"] },\n    \"delete\": { \"required\": [\"id\"] }\n  },\n  \"example\": { \"action\": \"create\", \"title\": \"Fix login bug\", \"assignee\": \"lulu@example.com\" }\n}",
+                "options": {
+                    "responseCode": "={{ 200 }}"
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [160, 400],
+            "id": "e52a37b3-01db-464d-b4af-830ab9482f04",
+            "name": "Respond to Webhook"
+        },
+        {
+            "parameters": {
+                "content": "## Create Task\nThis validates input and normalizes fields with slight errors from the user.",
+                "height": 144,
+                "width": 208,
+                "color": 5
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [160, -656],
+            "id": "a17d53f9-5b05-40d9-adb8-34920af3e7c3",
+            "name": "Sticky Note"
+        },
+        {
+            "parameters": {
+                "content": "## Get Task(s)\n Get one task if id is provided. If not, get all tasks based on filter.\n",
+                "height": 144,
+                "width": 176,
+                "color": 4
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [384, -320],
+            "id": "2601a58f-2355-455c-a9e9-0ea8bfe07cb5",
+            "name": "Sticky Note1"
+        },
+        {
+            "parameters": {
+                "content": "## Update Task\nUpdate task based on the validity of fields provided.",
+                "height": 128,
+                "width": 208,
+                "color": 6
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [544, 160],
+            "id": "837a7e90-18c2-4787-909e-277dcae82096",
+            "name": "Sticky Note2"
+        },
+        {
+            "parameters": {
+                "content": "## Delete Task \nArchive(soft-delete) task. Task is archived by updating status.",
+                "height": 128,
+                "width": 192,
+                "color": "#920202"
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [544, 592],
+            "id": "eff6b9e4-04b8-40e0-87ee-c71cf5684110",
+            "name": "Sticky Note3"
+        },
+        {
+            "parameters": {
+                "jsCode": "\nfor (const item of $input.all()) {\n  const body = item.json.body\n\n  return { json: {id: body.id, Status: \"Archived\"}}\n}\n\nreturn $input.all();"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [864, 720],
+            "id": "e3da7130-e390-4e1c-8077-c5dfbfb3b3d0",
+            "name": "Set Archive status"
+        },
+        {
+            "parameters": {
+                "content": "## Invalid Operation\nAction does not match either read, create, update or delete.",
+                "height": 144,
+                "width": 176,
+                "color": 2
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [144, 912],
+            "id": "a02d5e39-e2a7-4c7f-a669-dfd17fde68e6",
+            "name": "Sticky Note4"
+        },
+        {
+            "parameters": {
+                "jsCode": "\nconst noTasks = Object.keys($input.all()[0].json).length === 0\n\nlet cleanTasks\n\nif(noTasks) {\n  return [{json: {message: \"No task(s) found\"}}]\n} else {\n  \n  cleanTasks = !noTasks && $input.all().map(item => {\n    const airtableFields = item.json || {};\n  \n    return {\n      id: item.json.id,\n      title: airtableFields.fields.Title,\n      assignee: airtableFields.fields.Assignee,\n      status: airtableFields.fields.Status,\n      dueDate: airtableFields.fields.Due_Date,\n      priority: airtableFields.fields.Priority,\n      created: airtableFields.createdTime\n    };\n});\n\n// return a single item containing custom array payload\n  return [{\n    json: {\n      message: \"One or more items found\",\n      totalTasks: cleanTasks.length,\n      tasks: cleanTasks\n    }\n  }];\n}\n\n\n"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1264, 96],
+            "id": "e70b2d0e-9fe1-47cb-9038-6db065ce3f5b",
+            "name": "Normalize returned tasks"
+        },
+        {
+            "parameters": {
+                "content": "## Info Endpoint\nA mini doc that returns info on how to use each endpoint."
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [0, 576],
+            "id": "b7607294-e91f-4f8f-8ba8-b60143db1492",
+            "name": "Sticky Note5"
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Validate User input": {
+            "main": [
+                [
+                    {
+                        "node": "User input is invalid?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "User input is invalid?": {
+            "main": [
+                [
+                    {
+                        "node": "Validation-Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Normalize input fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Action": {
+            "main": [
+                [
+                    {
+                        "node": "Validate User input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Id is present?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Id is present?2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Id is present?3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Unknown Action",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create a task": {
+            "main": [
+                [
+                    {
+                        "node": "Task creation successful",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Create Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize input fields": {
+            "main": [
+                [
+                    {
+                        "node": "Create a task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get a task": {
+            "main": [
+                [
+                    {
+                        "node": "Task Found?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Id is present?": {
+            "main": [
+                [
+                    {
+                        "node": "Get a task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Filter tasks",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Task Found?": {
+            "main": [
+                [
+                    {
+                        "node": "Return task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Task not found",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter tasks": {
+            "main": [
+                [
+                    {
+                        "node": "Get task(s)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get task(s)": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize returned tasks",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Invalid/No fields present?": {
+            "main": [
+                [
+                    {
+                        "node": "No valid fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Normalize and Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Id is present?2": {
+            "main": [
+                [
+                    {
+                        "node": "Validate fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "No ID response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate fields": {
+            "main": [
+                [
+                    {
+                        "node": "Invalid/No fields present?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is invalid?": {
+            "main": [
+                [
+                    {
+                        "node": "No valid fields1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Update task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize and Validate": {
+            "main": [
+                [
+                    {
+                        "node": "Is invalid?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Id is present?3": {
+            "main": [
+                [
+                    {
+                        "node": "Set Archive status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "No ID response1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update task": {
+            "main": [
+                [
+                    {
+                        "node": "Task updated",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Update Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Archive Task": {
+            "main": [
+                [
+                    {
+                        "node": "Task archived",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Archive Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Archive Error": {
+            "main": [[]]
+        },
+        "Task API": {
+            "main": [
+                [
+                    {
+                        "node": "Check Action",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API Info": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Archive status": {
+            "main": [
+                [
+                    {
+                        "node": "Archive Task",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize returned tasks": {
+            "main": [
+                [
+                    {
+                        "node": "Return task(s)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": false
+    },
+    "versionId": "5899f67c-ccdc-4337-90a3-13aaea396644",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "f0bb67c2e0672c51300bee83778c2adce493ad3b85d51a574536cb91e9b790aa"
+    },
+    "nodeGroups": [],
+    "id": "9qew1j3MIQ51l6Df",
+    "tags": []
+}
