@@ -66,3 +66,8 @@ independent of whether the real-time flow already caught it, as a safety net.
 `n8n` `Airtable` `Slack` `Gmail`
 `Node types used: Webhook, Split In Batches, Airtable (Search/List/Update), Code, IF, Filter,
 Schedule Trigger, Slack, Gmail, Respond to Webhook`
+
+## Screenshots / Evidence
+
+- ![Real-time reactive workflow](./images/real-time-reactive.jpeg "Real-time reactive workflow")
+- ![Scheduled Sweep workflow](./images/scheduled-sweep.jpeg "Scheduled Sweep workflow")
