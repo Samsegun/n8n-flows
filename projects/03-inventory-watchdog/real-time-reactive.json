@@ -1,0 +1,620 @@
+{
+    "name": "Real-time reactive",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "f2e171b8-e355-4aa8-94c3-da599dccb915/order-placed",
+                "authentication": "headerAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [0, 0],
+            "id": "13ce6891-aa29-4128-ae4b-76cff91cf81e",
+            "name": "order placed",
+            "webhookId": "f2e171b8-e355-4aa8-94c3-da599dccb915",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "4r01IsPR8WQCA5mt",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fieldToSplitOut": "body.items",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.splitOut",
+            "typeVersion": 1,
+            "position": [224, 0],
+            "id": "9362d04a-5c56-4418-af0a-f66b64217161",
+            "name": "Split orders"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "fca5ae07-4844-4d49-817f-d94b678088c3",
+                            "name": "new_stock",
+                            "value": "={{ Math.max(0, $('Search Inventory').item.json.fields['Current Stock'] - $('Split orders').item.json.quantity_sold) }}",
+                            "type": "number"
+                        },
+                        {
+                            "id": "fa719ff3-7f20-45cb-a190-c9e556b51e99",
+                            "name": "is_oversold",
+                            "value": "={{ $('Split orders').item.json.quantity_sold > $('Search Inventory').item.json.fields['Current Stock'] }}",
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "05d80379-8b85-4194-a1f3-58deb9a97d77",
+                            "name": "shortfall",
+                            "value": "={{ Math.max(0, $('Split orders').item.json.quantity_sold - $('Search Inventory').item.json.fields['Current Stock']) }}",
+                            "type": "number"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [704, 80],
+            "id": "00a20f56-285e-479e-ba22-484effd3f63d",
+            "name": "Calculate new stock"
+        },
+        {
+            "parameters": {
+                "sendTo": "xxxxxxxx@gmail.com",
+                "subject": "=Reorder Needed: {{ $('Update Inventory').item.json.fields.SKU }} — {{ $('Update Inventory').item.json.fields['Product Name'] }}",
+                "emailType": "text",
+                "message": "=Stock alert — this item has dropped to or below its reorder threshold.  Product: {{ $('Update Inventory').item.json.fields['Product Name'] }} SKU: {{ $('Update Inventory').item.json.fields.SKU }} Current Stock: {{ $('Update Inventory').item.json.fields['Current Stock'] }} Reorder Threshold: {{ $('Update Inventory').item.json.fields['Reorder Threshold'] }} Suggested Reorder Quantity: {{ $('Update Inventory').item.json.fields['Reorder Qty'] }} Supplier: {{ $('Update Inventory').item.json.fields['Supplier Email'] }}  This is a draft only, no purchase order has been sent to the supplier. Review the numbers above and forward to the supplier manually if they look correct.  - Inventory Reorder Watchdog (automated alert)",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.2,
+            "position": [1728, 160],
+            "id": "a59f7544-87ef-4e73-8f81-7655cd1873a0",
+            "name": "Reorder Mail",
+            "webhookId": "c99b2712-ab78-47cd-a324-bcb1e52c5a98",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "mgCicL9i0yfgWtjI",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0C2HBR4STA",
+                    "mode": "id"
+                },
+                "text": "={{ $('Calculate new stock').item.json.is_oversold \n   ? `🚨 *OVERSOLD* — ${$json.fields['Product Name']} (${$json.fields.SKU})\\nOrder requested ${$('Split orders').item.json.quantity_sold}, only ${$('Search Inventory').item.json.fields['Current Stock']} in stock — short by ${$('Calculate new stock').item.json.shortfall} units.\\n*This order cannot be fully fulfilled — needs manual review.*` \n   : `📉 Low stock — ${$json.fields['Product Name']} (${$json.fields.SKU})\\nCurrent: ${$json.fields['Current Stock']} | Threshold: ${$json.fields['Reorder Threshold']}` }}",
+                "otherOptions": {}
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [1712, -48],
+            "id": "79aef987-657e-41b4-abc3-668954aff1f3",
+            "name": "Low stock alert",
+            "webhookId": "895d192b-f875-495a-9984-b6eec1c52587",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "search",
+                "base": {
+                    "__rl": true,
+                    "value": "appwzpo49vgvGdQ2n",
+                    "mode": "list",
+                    "cachedResultName": "Inventory-Reorder-Watchdog",
+                    "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tblTYop6XMncYOeSy",
+                    "mode": "list",
+                    "cachedResultName": "inventory",
+                    "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n/tblTYop6XMncYOeSy"
+                },
+                "filterByFormula": "={SKU} = '{{ $json.sku }}'",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [464, 0],
+            "id": "77a20a15-9b44-4676-9f65-92a6196db913",
+            "name": "Search Inventory",
+            "alwaysOutputData": true,
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "base": {
+                    "__rl": true,
+                    "value": "appwzpo49vgvGdQ2n",
+                    "mode": "list",
+                    "cachedResultName": "Inventory-Reorder-Watchdog",
+                    "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tblTYop6XMncYOeSy",
+                    "mode": "list",
+                    "cachedResultName": "inventory",
+                    "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n/tblTYop6XMncYOeSy"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "id": "={{ $('Search Inventory').item.json.id }}",
+                        "Current Stock": "={{ $json.new_stock }}"
+                    },
+                    "matchingColumns": ["id"],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "SKU",
+                            "displayName": "SKU",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Product Name",
+                            "displayName": "Product Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Current Stock",
+                            "displayName": "Current Stock",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Reorder Threshold",
+                            "displayName": "Reorder Threshold",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Reorder Qty",
+                            "displayName": "Reorder Qty",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Supplier Email",
+                            "displayName": "Supplier Email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Last Alert Sent",
+                            "displayName": "Last Alert Sent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "dateTime",
+                            "readOnly": false,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [960, 80],
+            "id": "23ee0388-fc0a-4ddb-834e-991e92746a10",
+            "name": "Update Inventory",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "bd9ca2db-f8e0-4d8c-9267-f413320c5b7e",
+                            "leftValue": "={{ $('Update Inventory').item.json.fields['Current Stock'] }}",
+                            "rightValue": "={{ $('Update Inventory').item.json.fields['Reorder Threshold'] }}",
+                            "operator": {
+                                "type": "number",
+                                "operation": "lte"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [1328, 64],
+            "id": "ff51037c-2ef4-42d7-bbcc-fef21794942f",
+            "name": "Stock below Threshold?"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"{{ `Current stock for ${$('Update Inventory').item.json.fields['Product Name']} is above Reorder threshold` }}\",\n  \"data\": {\n    \"oldStock\": \"{{$('Search Inventory').item.json.fields['Current Stock']}}\",\n    \"currentStock\": \"{{$('Update Inventory').item.json.fields['Current Stock']}}\",\n    \"reorderThreshold\": \"{{$('Update Inventory').item.json.fields['Reorder Threshold']}}\"\n  }\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1744, 368],
+            "id": "edc0d727-8d32-4cfc-81c2-af30e9814489",
+            "name": "Above threshold response"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"{{ $('Calculate new stock').item.json.is_oversold ? 'Order exceeds available stock — flagged for manual review' : 'Low stock alert and reorder email sent' }}\",\n  \"data\": {\n    \"sku\": \"{{ $('Search Inventory').item.json.fields['SKU'] }}\",\n    \"oldStock\": {{ $('Search Inventory').item.json.fields['Current Stock'] }},\n    \"currentStock\": {{ $('Update Inventory').item.json.fields['Current Stock'] }},\n    \"reorderThreshold\": {{ $('Update Inventory').item.json.fields['Reorder Threshold'] }},\n    \"isOversold\": {{ $('Calculate new stock').item.json.is_oversold }},\n    \"shortfall\": {{ $('Calculate new stock').item.json.shortfall }}\n  }\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [2112, 80],
+            "id": "f130f6ce-5b6a-4120-b0d6-9f802ff8126d",
+            "name": "Alert and Mail sent"
+        },
+        {
+            "parameters": {
+                "jsCode": "// 1. Get all the original SKUs from the initial order placement node\nconst originalOrderItems = $('order placed').item.json.body.items || []; \n\n// 2. Get the successful matches from Search Inventory\nconst foundInventoryItems = $input.all();\n\n// Filter out any empty items created by 'Always Output Data' and map the valid SKUs\nconst foundSkus = new Set(\n  foundInventoryItems\n    .filter(item => item.json && item.json.fields && item.json.fields['SKU'])\n    .map(item => item.json.fields['SKU'])\n); \n\n// 3. Filter out the SKUs that exist in the order but were NOT found in inventory\nconst invalidItems = originalOrderItems.filter(item => !foundSkus.has(item.sku));\n\n// 4. Output the results safely\nreturn [{\n  json: {\n    has_mismatch: invalidItems.length > 0,\n    total_ordered: originalOrderItems.length,\n    total_found: foundSkus.size,\n    invalid_skus: invalidItems \n  }\n}];\n"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [688, -176],
+            "id": "277cdda2-686a-4bc9-8c00-67d791e9009b",
+            "name": "validate SKUs"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"SKU(s) not found, please check and enter correct details\",\n  \"data\": {{ $('invalid SKU?').item.json.invalid_skus.toJsonString() }}\n}",
+                "options": {
+                    "responseCode": 404
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1376, -192],
+            "id": "8d7dd538-e64a-4b80-ba70-542296371f31",
+            "name": "inavlid SKU found"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "fbd502f7-dd5f-4b49-a23f-66604bd0600c",
+                            "leftValue": "={{ $json.has_mismatch }}",
+                            "rightValue": false,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [912, -176],
+            "id": "20f71a70-096f-4ade-ac8d-b69744b2a024",
+            "name": "invalid SKU?"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"Failed to update stock for {{ $json.fields.SKU }} — needs manual check\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1344, 336],
+            "id": "76dbdc8d-95ad-4db0-8595-2e36b6b7fd88",
+            "name": "Respond to Webhook"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0C2FT4KPDX",
+                    "mode": "id"
+                },
+                "text": "={{ $json.invalid_skus.length }} SKU(s) from order not found in inventory:\n{{ $json.invalid_skus.map(i => `• ${i.sku} (qty: ${i.quantity_sold})`).join('\\n') }}\n\nOrder total items: {{ $json.total_ordered }} | Matched: {{ $json.total_found }}",
+                "otherOptions": {}
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [1136, -192],
+            "id": "4d4f49ff-7175-46b7-aff4-734d9e8e3dae",
+            "name": "send SKU error",
+            "webhookId": "d6bc120b-b815-4f7f-8b61-9d8d28d0a527",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0C2FT4KPDX",
+                    "mode": "id"
+                },
+                "text": "=Failed to update stock for {{ $json.fields.SKU }} — needs manual check.",
+                "otherOptions": {}
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [1072, 336],
+            "id": "abdab3cc-833c-4956-a9ff-81997b09a859",
+            "name": "send update error",
+            "webhookId": "1c1429ae-65e5-41fb-99ae-a1ce402351fb",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "order placed": {
+            "main": [
+                [
+                    {
+                        "node": "Split orders",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split orders": {
+            "main": [
+                [
+                    {
+                        "node": "Search Inventory",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Calculate new stock": {
+            "main": [
+                [
+                    {
+                        "node": "Update Inventory",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Search Inventory": {
+            "main": [
+                [
+                    {
+                        "node": "validate SKUs",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Calculate new stock",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Inventory": {
+            "main": [
+                [
+                    {
+                        "node": "Stock below Threshold?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "send update error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Stock below Threshold?": {
+            "main": [
+                [
+                    {
+                        "node": "Low stock alert",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Reorder Mail",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Above threshold response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Low stock alert": {
+            "main": [
+                [
+                    {
+                        "node": "Alert and Mail sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Reorder Mail": {
+            "main": [
+                [
+                    {
+                        "node": "Alert and Mail sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "validate SKUs": {
+            "main": [
+                [
+                    {
+                        "node": "invalid SKU?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "invalid SKU?": {
+            "main": [
+                [
+                    {
+                        "node": "send SKU error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "send SKU error": {
+            "main": [
+                [
+                    {
+                        "node": "inavlid SKU found",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "send update error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate"
+    },
+    "versionId": "364b2067-34be-4ae8-907c-df923defbfc8",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "f0bb67c2e0672c51300bee83778c2adce493ad3b85d51a574536cb91e9b790aa"
+    },
+    "nodeGroups": [],
+    "id": "tvdwrVLZnFHDdt9D",
+    "tags": []
+}

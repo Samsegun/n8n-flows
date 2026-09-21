@@ -1,0 +1,220 @@
+{
+  "name": "Scheduled sweep",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c4cf3a93-9940-409a-80d5-9d744cc50882",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appwzpo49vgvGdQ2n",
+          "mode": "list",
+          "cachedResultName": "Inventory-Reorder-Watchdog",
+          "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblTYop6XMncYOeSy",
+          "mode": "list",
+          "cachedResultName": "inventory",
+          "cachedResultUrl": "https://airtable.com/appwzpo49vgvGdQ2n/tblTYop6XMncYOeSy"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "94ee6033-7fbc-49e2-af29-64979c796a67",
+      "name": "list inventory",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "txmahBOO3G6CvmaP",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "afb86a4e-8f9c-492e-8778-872c26478b98",
+              "leftValue": "={{ $('list inventory').item.json.fields[\"Current Stock\"] }}",
+              "rightValue": "={{ $('list inventory').item.json.fields[\"Reorder Threshold\"] }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "01c38d6d-3cb4-4fed-af94-f5ed41b3dc38",
+      "name": "filter stocks below/equal threshold"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst lines = items.map(item => {\n  const f = item.json.fields;\n  return `• *${f['Product Name']}* (${f['SKU']}) — ${f['Current Stock']} left (threshold: ${f['Reorder Threshold']})`;\n}).join('\\n');\n\nconst digest = `📦 *Daily Low Stock Report* — ${new Date().toISOString().slice(0,10)}\\n\\n${lines}\\n\\n${items.length} item(s) need attention.`;\n\nreturn [{ json: { digest_text: digest, low_stock_count: items.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "c18a4a49-6eb9-4fbb-b1a6-e80513237d85",
+      "name": "format low-stock message"
+    },
+    {
+      "parameters": {
+        "sendTo": "olusegunotunba@gmail.com",
+        "subject": "=📦 Daily Low Stock Report — {{ $('format low-stock message').item.json.low_stock_count }} item(s)",
+        "emailType": "text",
+        "message": "={{ $('format low-stock message').item.json.digest_text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        80
+      ],
+      "id": "39737b1e-577e-4738-a150-1ee9f18669a5",
+      "name": "low stock mail",
+      "webhookId": "628ec010-4bb9-4c82-8af7-2c4f5af6f31e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mgCicL9i0yfgWtjI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C2HBR4STA",
+          "mode": "id"
+        },
+        "text": "={{ $('format low-stock message').item.json.digest_text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        912,
+        -192
+      ],
+      "id": "a9b59d8b-2480-4bb2-8525-6241dbb3b778",
+      "name": "low stock slack message",
+      "webhookId": "c3bdb623-23c9-47c8-a9d9-9b306ae4fc9d",
+      "credentials": {
+        "slackApi": {
+          "id": "QL9OSRwwqhVg6I2D",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "list inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list inventory": {
+      "main": [
+        [
+          {
+            "node": "filter stocks below/equal threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter stocks below/equal threshold": {
+      "main": [
+        [
+          {
+            "node": "format low-stock message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format low-stock message": {
+      "main": [
+        [
+          {
+            "node": "low stock slack message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "low stock mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0fd10131-a6a0-4e9e-ac37-e759e6b1d8c2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f0bb67c2e0672c51300bee83778c2adce493ad3b85d51a574536cb91e9b790aa"
+  },
+  "nodeGroups": [],
+  "id": "UXhZ6sXXA2Cb67q8",
+  "tags": []
+}
