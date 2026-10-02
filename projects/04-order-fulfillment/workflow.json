@@ -1,0 +1,1515 @@
+{
+    "name": "Order-fulfillment Bridge",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "22fb36fd-60bc-4c50-b4af-b5b359acb45e/orders",
+                "authentication": "headerAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "a9698720-9ce1-4d4c-86a5-e2cd12281a21",
+            "name": "order placed",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [0, 0],
+            "webhookId": "22fb36fd-60bc-4c50-b4af-b5b359acb45e",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "4r01IsPR8WQCA5mt",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "ad21cc15-a56b-4f50-bb2b-66ad4ca9b803",
+                            "leftValue": "={{ $('order placed').item.json.body.payment_status }}",
+                            "rightValue": "paid",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "f7e7bf51-b08c-46ca-98fb-566f973c2a06",
+            "name": "paid or unpaid?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [224, 0]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "278986bc-c27b-45cf-83ce-1d8f96e321b3",
+                            "name": "order_id",
+                            "value": "={{ $('paid or unpaid?').item.json.body.order_id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "1dc80eb3-db7e-4f25-9c48-383a77aa4223",
+                            "name": "customer_name",
+                            "value": "={{ $('paid or unpaid?').item.json.body.customer?.name || \"Missing name\" }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "c4a7f252-ba94-40d9-9e9b-c5c623baab46",
+                            "name": "customer_email",
+                            "value": "={{ $('paid or unpaid?').item.json.body.customer?.email || \"Missing Email\" }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "d1b86dea-2829-46a5-8574-10ee90a27968",
+                            "name": "order_total",
+                            "value": "={{ $('paid or unpaid?').item.json.body.order_total }}",
+                            "type": "number"
+                        },
+                        {
+                            "id": "43fa4e66-0199-4858-9db3-ad8e111760bc",
+                            "name": "payment_status",
+                            "value": "={{ $('paid or unpaid?').item.json.body.payment_status || \"unpaid\" }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "57d4b036-b676-43ae-8c13-5781c8570be7",
+                            "name": "placed_at",
+                            "value": "={{ $('paid or unpaid?').item.json.body.placed_at }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "b512c5ee-7c53-4faa-a248-ebb44920fbb6",
+                            "name": "logged_at",
+                            "value": "={{ $now.toISO() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "4d705164-a996-4786-86a1-4eae7c27fadc",
+                            "name": "follow_up_status",
+                            "value": "Needs Review",
+                            "type": "string"
+                        },
+                        {
+                            "id": "d09b1f43-f11a-4b55-bc36-82d7266cfa60",
+                            "name": "resolved",
+                            "value": false,
+                            "type": "boolean"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "97d60b56-c1e5-42b0-8c0f-afc5f5521964",
+            "name": "build fields",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [336, 992]
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0C4JMSD43S",
+                    "mode": "id"
+                },
+                "text": "=💳 Unpaid order logged: {{ $('build fields').item.json.order_id }} — {{ $('build fields').item.json.customer_name }} — ${{ $json.order_total }} ({{ $json.payment_status }})",
+                "otherOptions": {
+                    "includeLinkToWorkflow": false
+                }
+            },
+            "id": "c9030878-ccfa-4b1e-a37d-a0781dcc6e91",
+            "name": "post to #accounts-payable",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [592, 1136],
+            "webhookId": "7043f467-723c-4f2b-bfea-53103e7abc56",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "value": "1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk",
+                    "mode": "list",
+                    "cachedResultName": "Order Fulfillment Bridge",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit?usp=drivesdk"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": "gid=0",
+                    "mode": "list",
+                    "cachedResultName": "Unpaid Orders",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit#gid=0"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {},
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "order_id",
+                            "displayName": "order_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "customer_name",
+                            "displayName": "customer_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "customer_email",
+                            "displayName": "customer_email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "order_total",
+                            "displayName": "order_total",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "payment_status",
+                            "displayName": "payment_status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "placed_at",
+                            "displayName": "placed_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "logged_at",
+                            "displayName": "logged_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "follow_up_status",
+                            "displayName": "follow_up_status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "resolved",
+                            "displayName": "resolved",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "id": "7b9b27a2-9e59-4662-b8f8-5cfefa260487",
+            "name": "append row to unpaid orders",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [608, 896],
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "jKKYJencfO1ncDKS",
+                    "name": "Google Sheets account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0BQ9DF86KS",
+                    "mode": "id"
+                },
+                "text": "=\"⚠️ Failed to log unpaid order {{ $('append row to unpaid orders').item.json.order_id }} - check manually.\"",
+                "otherOptions": {
+                    "includeLinkToWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [848, 960],
+            "id": "867a835d-8de5-444b-9a27-2bc37f684ce5",
+            "name": "append row failed",
+            "webhookId": "71623d18-11cb-4359-bd51-5d9e348cb4e7",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": \"Appended to sheets and slack channel success\",\n  \"data\": {{ $('build fields').item.json.toJsonString() }}\n}\n",
+                "options": {
+                    "responseCode": 200
+                }
+            },
+            "id": "9f1f49bb-5870-4a33-beb8-eee6eb0d1841",
+            "name": "unpaid response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [1552, 880]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "b5b3abe4-2146-4efc-8945-0507fbacc3d0",
+                            "name": "order_id",
+                            "value": "={{ $('paid or unpaid?').item.json.body.order_id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "fb1b7c67-a73d-4de0-9e22-fe924a686b33",
+                            "name": "customer_name",
+                            "value": "={{ $('paid or unpaid?').item.json.body.customer?.name || \"Missing name\" }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "3ad60e12-aae4-4c8c-a078-f2e58035a2f4",
+                            "name": "shipping_address",
+                            "value": "={{ $('paid or unpaid?').item.json.body.customer.shipping_address }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "b2279896-b3da-429a-a7af-82a746dd6167",
+                            "name": "items_summary",
+                            "value": "={{ $('paid or unpaid?').item.json.body.line_items.map(item => `${item.qty}x ${item.name}`).join(\", \") }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "8e6c0be6-a32e-4a4c-9356-36f3c213a02b",
+                            "name": "status",
+                            "value": "Awaiting Pick",
+                            "type": "string"
+                        },
+                        {
+                            "id": "c1acfa6f-7086-4dda-8846-37c4bf6ecd8f",
+                            "name": "placed_at",
+                            "value": "={{ $('paid or unpaid?').item.json.body.placed_at }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [336, -480],
+            "id": "aa84ea87-31df-4311-9994-698ad61ed0ee",
+            "name": "summarize fields"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0BQ9DF86KS",
+                    "mode": "id"
+                },
+                "text": "=\"⚠️ Failed to log order {{ $('summarize fields').item.json.order_id }} - check manually.\"",
+                "otherOptions": {
+                    "includeLinkToWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [1152, -288],
+            "id": "f45e08b7-c449-41a4-b08b-2d825bfbdb63",
+            "name": "append to pick&pack failed",
+            "webhookId": "67dc1b8c-627a-4aad-98ad-9a862d3e64b2",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "search",
+                "base": {
+                    "__rl": true,
+                    "value": "appGrVIO4PhUXjB6p",
+                    "mode": "list",
+                    "cachedResultName": "Customers",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbl3OVzoK9deQgOZI",
+                    "mode": "list",
+                    "cachedResultName": "Table 1",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p/tbl3OVzoK9deQgOZI"
+                },
+                "filterByFormula": "={Email}='{{$('paid or unpaid?').item.json.body.customer.email.toLowerCase()}}'",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [560, -16],
+            "id": "282c0a7e-ce51-4853-a645-2448b364fa2e",
+            "name": "search customers by email",
+            "alwaysOutputData": true,
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "7d9df271-6368-4880-80d6-0f10d51188cd",
+                            "leftValue": "={{ $('search customers by email').item.json.isNotEmpty() }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [768, -16],
+            "id": "87ef28e8-4932-497a-b5b1-e7c40844ae94",
+            "name": "customer found?"
+        },
+        {
+            "parameters": {
+                "operation": "create",
+                "base": {
+                    "__rl": true,
+                    "value": "appGrVIO4PhUXjB6p",
+                    "mode": "list",
+                    "cachedResultName": "Customers",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbl3OVzoK9deQgOZI",
+                    "mode": "list",
+                    "cachedResultName": "Table 1",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p/tbl3OVzoK9deQgOZI"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Name": "={{ $('paid or unpaid?').item.json.body.customer.name }}",
+                        "Email": "={{$('paid or unpaid?').item.json.body.customer.email.toLowerCase()}}",
+                        "Order History": "={{ $('paid or unpaid?').item.json.body.order_id }}",
+                        "Lifetime Value": "={{ $('paid or unpaid?').item.json.body.order_total }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "Name",
+                            "displayName": "Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Email",
+                            "displayName": "Email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Order History",
+                            "displayName": "Order History",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Lifetime Value",
+                            "displayName": "Lifetime Value",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "readOnly": false,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [976, 240],
+            "id": "48267733-2666-4c99-87e1-958b8609ac51",
+            "name": "Create a record",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "base": {
+                    "__rl": true,
+                    "value": "appGrVIO4PhUXjB6p",
+                    "mode": "list",
+                    "cachedResultName": "Customers",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "tbl3OVzoK9deQgOZI",
+                    "mode": "list",
+                    "cachedResultName": "Table 1",
+                    "cachedResultUrl": "https://airtable.com/appGrVIO4PhUXjB6p/tbl3OVzoK9deQgOZI"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "id": "={{ $json.record_id }}",
+                        "Order History": "={{ $json.order_history }}",
+                        "Lifetime Value": "={{ $json.ltv }}"
+                    },
+                    "matchingColumns": ["id"],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "Name",
+                            "displayName": "Name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Email",
+                            "displayName": "Email",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Order History",
+                            "displayName": "Order History",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "readOnly": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "Lifetime Value",
+                            "displayName": "Lifetime Value",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "readOnly": false,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.airtable",
+            "typeVersion": 2.2,
+            "position": [1264, -80],
+            "id": "5f20ae03-de9d-40e9-95a9-a07ce33a1d74",
+            "name": "Update record",
+            "credentials": {
+                "airtableTokenApi": {
+                    "id": "txmahBOO3G6CvmaP",
+                    "name": "Airtable Personal Access Token account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForEachItem",
+                "jsCode": "const existing = $('customer found?').item.json.fields['Order History'] || '';\n\n// Duplicate order_ids occur during development or testing i.e.\n// same data is sent through the webhook. This 'duplicate' prevents\n// database pollution.\nconst duplicate = existing.split(\",\").includes($('paid or unpaid?').item.json.body.order_id) \n\nconst newHistory = existing ? `${existing}${duplicate ? \"\" :  ', ' + $('paid or unpaid?').item.json.body.order_id}` : $('paid or unpaid?').item.json.body.order_id;\n\nconst newLTV = (Number($('customer found?').item.json.fields['Lifetime Value']) || 0) + (duplicate ? 0 : Number($('paid or unpaid?').item.json.body.order_total));\n\nreturn { json: { record_id: $('customer found?').item.json.id, order_history: newHistory, ltv: newLTV } };"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [992, -80],
+            "id": "c54824b8-479e-4e05-834f-80ecdebc3e26",
+            "name": "update record code"
+        },
+        {
+            "parameters": {
+                "numberInputs": 3
+            },
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.2,
+            "position": [2896, -560],
+            "id": "be283a07-0998-4ca0-aa5e-1860f3b30141",
+            "name": "Merge",
+            "alwaysOutputData": false
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "value": "1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk",
+                    "mode": "list",
+                    "cachedResultName": "Order Fulfillment Bridge",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit?usp=drivesdk"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": 744592115,
+                    "mode": "list",
+                    "cachedResultName": "Revenue Ledger",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit#gid=744592115"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {},
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "order_id",
+                            "displayName": "order_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "date",
+                            "displayName": "date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "payment_status",
+                            "displayName": "payment_status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [864, 592],
+            "id": "da911dec-9485-4925-9c64-3d73a4e427c7",
+            "name": "Append row in Ledger",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "jKKYJencfO1ncDKS",
+                    "name": "Google Sheets account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "content": "## Fulfillment",
+                "height": 80,
+                "width": 176,
+                "color": 4
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [128, -432],
+            "typeVersion": 1,
+            "id": "108f9c84-f20c-48f0-b072-317a714019f2",
+            "name": "Sticky Note"
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "value": "1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk",
+                    "mode": "list",
+                    "cachedResultName": "Order Fulfillment Bridge",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit?usp=drivesdk"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": 2018135491,
+                    "mode": "list",
+                    "cachedResultName": "Pick & Pack",
+                    "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1d1c2yNJKJiBWjrv73VWzNJ9OFtO-MrckXQZpfu8-Tsk/edit#gid=2018135491"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {},
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "order_id",
+                            "displayName": "order_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "customer_name",
+                            "displayName": "customer_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "shipping_address",
+                            "displayName": "shipping_address",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "items_summary",
+                            "displayName": "items_summary",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "status",
+                            "displayName": "status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "placed_at",
+                            "displayName": "placed_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.7,
+            "position": [624, -480],
+            "id": "55c54daa-ba6c-41be-a3f9-528db6c9a9c1",
+            "name": "Append row in pick&pack",
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "jKKYJencfO1ncDKS",
+                    "name": "Google Sheets account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "content": "## CRM",
+                "height": 80,
+                "width": 150,
+                "color": 5
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [448, -112],
+            "typeVersion": 1,
+            "id": "8f4538b3-53c6-4bef-9f75-737192ad3cc4",
+            "name": "Sticky Note1"
+        },
+        {
+            "parameters": {
+                "content": "## Ledger",
+                "height": 80,
+                "width": 182,
+                "color": 6
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "position": [576, 480],
+            "typeVersion": 1,
+            "id": "23d46147-b6ef-498f-8f48-c589bd16d8fa",
+            "name": "Sticky Note2"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0BQ9DF86KS",
+                    "mode": "id"
+                },
+                "text": "={{ $('compose message').item.json.message }}",
+                "otherOptions": {
+                    "includeLinkToWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.7,
+            "position": [2880, -208],
+            "id": "34497555-ff3a-42b9-9573-c01ebd4c4c47",
+            "name": "Send a message",
+            "webhookId": "9dd5ce33-b83f-4284-9825-3b453f8adcc0",
+            "credentials": {
+                "slackApi": {
+                    "id": "QL9OSRwwqhVg6I2D",
+                    "name": "Slack account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"message\": {{$('compose message').item.json.message.toJsonString()}},\n  \"data\": {\n    \"order\":  {{$('paid or unpaid?').item.json.body.toJsonString()}}\n  }\n}",
+                "options": {
+                    "responseCode": 200
+                }
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.5,
+            "position": [3120, -208],
+            "id": "0a966baa-30bb-4a5b-9da0-d3a252dd7d05",
+            "name": "Respond to Webhook"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "7caf3844-ea3d-40bb-9bd0-875936891589",
+                            "name": "fulfillment_status",
+                            "value": "❌ Fulfillment",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [848, -352],
+            "id": "d5f8e9cd-c062-4680-8579-ba2fea830c57",
+            "name": "failed fulfillment status"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "684585d0-4872-4255-a7d7-05eae3e7b8a8",
+                            "name": "fulfillment_status",
+                            "value": "✅ Fulfillment",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [864, -544],
+            "id": "e5f1d65a-09b0-491f-a0d1-b0dad5ea97bc",
+            "name": "fulfillment status success"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "bd1bc5ab-b8e0-4bf0-ac08-13f9351c6f61",
+                            "name": "order_id",
+                            "value": "={{ $json.body.order_id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "3cbb213e-a0aa-49da-8842-21b24a4e9315",
+                            "name": "date",
+                            "value": "={{ $json.body.placed_at }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "3c3f2833-29d1-45b2-bce9-fdc48bdd657a",
+                            "name": "amount",
+                            "value": "={{ $json.body.order_total }}",
+                            "type": "number"
+                        },
+                        {
+                            "id": "dad1b8e9-f773-4b32-a3f2-80f84257229d",
+                            "name": "payment_status",
+                            "value": "={{ $json.body.payment_status }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [624, 592],
+            "id": "31dac07a-7581-4e99-a336-a5d33ab983af",
+            "name": "ledger fields"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "37fa3aef-20f7-45bf-96e8-7041fd906ed0",
+                            "name": "crm_status",
+                            "value": "✅ CRM",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1488, -176],
+            "id": "ca0aaa44-f5b7-4e43-92c8-9c0fd8379841",
+            "name": "CRM success status"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "33f7e5e1-f3ad-4e51-9412-343c66603c21",
+                            "name": "crm_status",
+                            "value": "✅ CRM",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1184, 144],
+            "id": "7e9f87b2-7dc0-45a8-9d36-11f75a6eae83",
+            "name": "CRM success status1"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "bd6ce4e1-5d85-4e7f-974e-163e68f6c3c6",
+                            "name": "crm_status",
+                            "value": "❌ CRM",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1488, 16],
+            "id": "28fdbc63-576a-45c8-9aff-54e95852a173",
+            "name": "CRM failed status"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "81fe714f-4f82-42ff-8213-22305a0304af",
+                            "name": "crm_status",
+                            "value": "❌ CRM",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1184, 352],
+            "id": "9c6b3b2b-1d5d-414a-9653-7d708a2c0b37",
+            "name": "CRM failed status1"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "80097d1f-ac3e-49b1-a1ac-f88d966ff3c1",
+                            "name": "ledger_status",
+                            "value": "✅ Ledger",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1392, 512],
+            "id": "5005b63d-2db7-407e-8216-f982c099007a",
+            "name": "ledger success status"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "a99ade86-6740-44c2-aa3f-6f420174a4a7",
+                            "name": "ledger_status",
+                            "value": "❌ Ledger",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.5,
+            "position": [1392, 704],
+            "id": "bc6d8061-d664-4776-bbb6-84c713326b64",
+            "name": "ledger failed status"
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst statuses = items.map(i => i.json.fulfillment_status || i.json.crm_status || i.json.ledger_status);\n\nconst orderId = $('paid or unpaid?').item.json.body.order_id;\nconst hasFailure = statuses.some(s => s.startsWith('❌'));\n\nreturn [{\n  json: {\n    message: `${hasFailure ? '⚠️' : '✅'} Order ${orderId} — ${statuses.join(', ')}${hasFailure ? '\\nSee automation error log for details.' : ''}`\n  }\n}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [3136, -544],
+            "id": "4ef16473-5b9e-4b44-8501-fb769b3cc3b4",
+            "name": "compose message"
+        },
+        {
+            "parameters": {
+                "content": "## Unpaid orders",
+                "height": 80,
+                "width": 224
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [80, 960],
+            "id": "3add0e2c-8616-421e-a26b-32a71ea85005",
+            "name": "Sticky Note3"
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "order placed": {
+            "main": [
+                [
+                    {
+                        "node": "paid or unpaid?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "paid or unpaid?": {
+            "main": [
+                [
+                    {
+                        "node": "summarize fields",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "search customers by email",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "ledger fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "build fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "build fields": {
+            "main": [
+                [
+                    {
+                        "node": "post to #accounts-payable",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "append row to unpaid orders",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "post to #accounts-payable": {
+            "main": [
+                [
+                    {
+                        "node": "unpaid response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "append row to unpaid orders": {
+            "main": [
+                [
+                    {
+                        "node": "unpaid response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "append row failed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "summarize fields": {
+            "main": [
+                [
+                    {
+                        "node": "Append row in pick&pack",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "search customers by email": {
+            "main": [
+                [
+                    {
+                        "node": "customer found?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "customer found?": {
+            "main": [
+                [
+                    {
+                        "node": "update record code",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Create a record",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "update record code": {
+            "main": [
+                [
+                    {
+                        "node": "Update record",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Append row in pick&pack": {
+            "main": [
+                [
+                    {
+                        "node": "fulfillment status success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "failed fulfillment status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update record": {
+            "main": [
+                [
+                    {
+                        "node": "CRM success status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "CRM failed status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Append row in Ledger": {
+            "main": [
+                [
+                    {
+                        "node": "ledger success status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "ledger failed status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create a record": {
+            "main": [
+                [
+                    {
+                        "node": "CRM success status1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "CRM failed status1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Merge": {
+            "main": [
+                [
+                    {
+                        "node": "compose message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send a message": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "failed fulfillment status": {
+            "main": [
+                [
+                    {
+                        "node": "append to pick&pack failed",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "fulfillment status success": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ledger fields": {
+            "main": [
+                [
+                    {
+                        "node": "Append row in Ledger",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "CRM failed status": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "CRM success status": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "CRM success status1": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "CRM failed status1": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "ledger success status": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "ledger failed status": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "compose message": {
+            "main": [
+                [
+                    {
+                        "node": "Send a message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "timeSavedMode": "fixed",
+        "errorWorkflow": "AdtdRFE2UtaDuB88",
+        "callerPolicy": "workflowsFromSameOwner",
+        "availableInMCP": false
+    },
+    "versionId": "32d4bf28-ffa3-4e9d-90ae-66545d733fbd",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "f0bb67c2e0672c51300bee83778c2adce493ad3b85d51a574536cb91e9b790aa"
+    },
+    "nodeGroups": [],
+    "id": "Kpa5UAuOwSAMKQHF",
+    "tags": []
+}
