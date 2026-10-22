@@ -55,10 +55,10 @@ happened and what a human should do.
 - **Same invoice sent twice** second one logs as Duplicate and isn't written again.
 - **Ledger write failing, two different ways, tested separately:**
 
-    | Failure                                                  | What happened                                                   |
-    | -------------------------------------------------------- | --------------------------------------------------------------- |
-    | Service unreachable (dead endpoint)                      | 3 attempts, about 14.6s, then Write Failed                      |
-    | Configuration error (nonexistent document or sheet name) | Failed immediately, no retries, 2s -4s total, then Write Failed |
+    | Failure                                                  | What happened                                                    |
+    | -------------------------------------------------------- | ---------------------------------------------------------------- |
+    | Service unreachable (dead endpoint)                      | 3 attempts, about 14s, then Write Failed                         |
+    | Configuration error (nonexistent document or sheet name) | Failed immediately, no retries, 2s - 4s total, then Write Failed |
 
     Both end in the same Write Failed log row and urgent Slack message. Failing fast on something
     that can't succeed is the right behavior. This is what I observed on the Google Sheets node
@@ -108,4 +108,4 @@ happened and what a human should do.
 - ![Full canvas with all five exit paths feeding the log](./images/full-canvas.png "Invoice Processing Pipeline workflow")
 - ![Execution showing the dead-endpoint retry (~14)](./images/retry.png "Retrying a failed execution")
 - ![Airtable Execution Log with one row per status type](./images/airtable-logs.png "Airtable logs")
-- ![The `#automation-alerts` message from the global error workflow](./images/global-error-alert.png "global error alert")
+- ![The `#automation-alerts` message from the global error workflow](./images/global-error-alert.png "global error slack-alert")
