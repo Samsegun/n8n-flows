@@ -102,3 +102,10 @@ happened and what a human should do.
 `n8n` `Gmail` `Google Sheets` `Airtable` `Slack`
 `Node types used: Gmail Trigger, Code, Extract From File, IF, Edit Fields, Google Sheets
 (Get/Append), Airtable (Create), Slack, Error Trigger`
+
+## Screenshots / Evidence
+
+- ![Full canvas with all five exit paths feeding the log](./images/full-canvas.png "Invoice Processing Pipeline workflow")
+- ![Execution showing the dead-endpoint retry (~14)](./images/retry.png "Retrying a failed execution")
+- ![Airtable Execution Log with one row per status type](./images/airtable-logs.png "Airtable logs")
+- ![The `#automation-alerts` message from the global error workflow](./images/global-error-alert.png "global error alert")
